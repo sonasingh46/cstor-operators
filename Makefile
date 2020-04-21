@@ -53,6 +53,9 @@ WEBHOOK_REPO=webhook
 # Specify the name of the docker repo for arm64
 CVC_OPERATOR_ARM64?=cvc-operator-arm64
 
+# Specify the date o build
+BUILD_DATE = $(shell date +'%Y%m%d%H%M%S')
+
 
 # deps ensures fresh go.mod and go.sum.
 .PHONY: deps
@@ -62,7 +65,8 @@ deps:
 
 .PHONY: test
 test:
-	go test ./...
+	# "Skipping tests under tests directory. These tests can be run via ginkgo cli."
+	go test `go list ./... | grep -v tests` 
 
 cvc-operator:
 	@echo -n "--> cvc-operator <--"
@@ -107,7 +111,7 @@ cspc-operator-image:
 	@echo "----------------------------"
 	@PNAME=${CSPC_OPERATOR} CTLNAME=${CSPC_OPERATOR} sh -c "'$(PWD)/build/build.sh'"
 	@cp bin/${CSPC_OPERATOR}/${CSPC_OPERATOR} build/cspc-operator/
-	@cd build/${CSPC_OPERATOR} && sudo docker build -t ${HUB_USER}/${CSPC_OPERATOR}:${IMAGE_TAG} --build-arg BUILD_DATE=${BUILD_DATE} .
+	@cd build/${CSPC_OPERATOR} && sudo docker build -t ${HUB_USER}/${CSPC_OPERATOR}:${IMAGE_TAG}  .
 	@rm build/${CSPC_OPERATOR}/${CSPC_OPERATOR}
 
 .PHONY: pool-manager-image
@@ -130,3 +134,6 @@ cstor-webhook-image:
 	@cp bin/${CSTOR_WEBHOOK}/${WEBHOOK_REPO} build/cstor-webhook/
 	@cd build/${CSTOR_WEBHOOK} && sudo docker build -t ${HUB_USER}/${CSTOR_WEBHOOK}:${IMAGE_TAG} --build-arg BUILD_DATE=${BUILD_DATE} .
 	@rm build/${CSTOR_WEBHOOK}/${WEBHOOK_REPO}
+
+.PHONY: amd64-images
+amd64-images: cspc-operator-image pool-manager-image cstor-webhook-image cvc-operator-image volume-manager-image
